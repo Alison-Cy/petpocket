@@ -1,46 +1,28 @@
 import express from 'express';
-import RoleService from '../services/roleService.js';
-import { authMiddleware } from '../middleware/authMiddleware.js';
-import { adminOnly, adminOrVet } from '../middleware/roleMiddleware.js';
+import {
+  createRole,
+  getAllRoles,
+  getRoleById,
+  updateRole,
+  deleteRole,
+  seedRoles
+} from '../controllers/roleController.js';
+import { authMiddleware } from '../middlewares/auth.js';
+import { adminOnly } from '../middlewares/roleCheck.js';
 
 const router = express.Router();
-const roleService = new RoleService();
 
-// Todos los endpoints requieren autenticación
+// Public routes (if needed)
+router.get('/', getAllRoles);
+router.get('/:id', getRoleById);
+
+// Protected routes
 router.use(authMiddleware);
 
-// POST /roles - Solo ADMIN
-router.post('/', adminOnly, async (req, res, next) => {
-  try {
-    const role = await roleService.createRole(req.body);
-    res.status(201).json(role);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// GET /roles - ADMIN y VETERINARIO
-router.get('/', adminOrVet, async (req, res, next) => {
-  try {
-    const includeInactive = req.query.includeInactive === 'true';
-    const roles = await roleService.findAllRoles(includeInactive);
-    res.json(roles);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// POST /roles/seed - Solo ADMIN
-router.post('/seed', adminOnly, async (req, res, next) => {
-  try {
-    await roleService.seedDefaultRoles();
-    res.json({ message: 'Roles por defecto creados' });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Resto de endpoints (GET /:id, PATCH /:id, etc.)
-// ... implementación similar ...
+// Admin-only routes
+router.post('/', adminOnly, createRole);
+router.put('/:id', adminOnly, updateRole);
+router.delete('/:id', adminOnly, deleteRole);
+router.post('/seed', adminOnly, seedRoles);
 
 export default router;

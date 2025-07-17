@@ -2,45 +2,44 @@ import Role from '../models/Role.js';
 import ApiError from '../utils/apiError.js';
 
 export default class RoleService {
-  async createRole(createRoleDto) {
-    return await Role.create(createRoleDto);
+  async createRole(roleData) {
+    return await Role.create(roleData);
   }
 
-  async findAllRoles(includeInactive = false) {
-    const where = includeInactive ? {} : { isActive: true };
-    return await Role.findAll({ where });
+  async getAllRoles() {
+    return await Role.findAll({
+      order: [['nombre', 'ASC']]
+    });
   }
 
-  async findRoleById(id) {
+  async getRoleById(id) {
     const role = await Role.findByPk(id);
     if (!role) throw new ApiError(404, 'Rol no encontrado');
     return role;
   }
 
-  async updateRole(id, updateRoleDto) {
-    const role = await this.findRoleById(id);
-    return await role.update(updateRoleDto);
-  }
-
-  async restoreRole(id) {
-    await Role.restore({ where: { id } });
-    return this.findRoleById(id);
+  async updateRole(id, updateData) {
+    const role = await this.getRoleById(id);
+    return await role.update(updateData);
   }
 
   async deleteRole(id) {
-    const role = await this.findRoleById(id);
+    const role = await this.getRoleById(id);
     await role.destroy();
-    return { message: 'Rol eliminado (soft delete)' };
+    return { message: 'Rol eliminado' };
   }
 
   async seedDefaultRoles() {
     const defaultRoles = [
-      { name: 'ADMIN', description: 'Administrador del sistema' },
-      { name: 'VETERINARIO', description: 'Personal médico' },
-      { name: 'RECEPCIONISTA', description: 'Atención al cliente' },
-      { name: 'CLIENTE', description: 'Dueño de mascotas' }
+      { nombre: 'ADMIN', descripcion: 'Administrador del sistema' },
+      { nombre: 'VETERINARIO', descripcion: 'Personal médico autorizado' },
+      { nombre: 'RECEPCIONISTA', descripcion: 'Personal de recepción' },
+      { nombre: 'CLIENTE', descripcion: 'Dueños de mascotas' }
     ];
 
-    await Role.bulkCreate(defaultRoles, { ignoreDuplicates: true });
+    await Role.bulkCreate(defaultRoles, {
+      ignoreDuplicates: true
+    });
+    return defaultRoles;
   }
 }
